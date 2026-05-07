@@ -142,3 +142,4 @@ networks:
 volumes:
   user_service_db_data:
   patient_service_db_data:
+  cloudbeaver_data:

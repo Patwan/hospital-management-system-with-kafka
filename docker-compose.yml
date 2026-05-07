@@ -5,9 +5,9 @@ services:
     networks:
       - hospital-system-backend-network
     environment:
-      - POSTGRES_DB=user_service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${USER_SERVICE_DB}
+      - POSTGRES_USER=${USER_SERVICE_USERNAME}
+      - POSTGRES_PASSWORD=${USER_SERVICE_DB_PASS}
       - POSTGRES_HOST_AUTH_METHOD=trust
       - TZ=Africa/Nairobi
     volumes:
@@ -28,9 +28,9 @@ services:
     networks:
       - hospital-system-backend-network
     environment:
-      - POSTGRES_DB=patient_service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${PATIENT_SERVICE_DB}
+      - POSTGRES_USER=${PATIENT_SERVICE_USERNAME}
+      - POSTGRES_PASSWORD=${PATIENT_SERVICE_DB_PASS}
       - POSTGRES_HOST_AUTH_METHOD=trust
       - TZ=Africa/Nairobi
     volumes:
@@ -126,7 +126,22 @@ services:
     depends_on:
       - eureka-service
       - auth-service
-      - patient-service
+      - billing-service
+    networks:
+      - hospital-system-backend-network
+    restart: unless-stopped
+    environment:
+      - TZ=Africa/Nairobi
+    env_file:
+      - .env
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: billing-service/Dockerfile
+    container_name: billing-service
+    ports:
+      - "${BILLING_SERVICE_PORT}:${BILLING_SERVICE_PORT}"
     networks:
       - hospital-system-backend-network
     restart: unless-stopped
@@ -142,3 +157,4 @@ networks:
 volumes:
   user_service_db_data:
   patient_service_db_data:
+  cloudbeaver_data:
