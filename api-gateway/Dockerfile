@@ -10,7 +10,7 @@ COPY src ./src
 
 RUN mvn clean package
 
-FROM openjdk:21-jdk AS gatewayRunner
+FROM eclipse-temurin:21-jdk  AS gatewayRunner
 
 WORKDIR /app
 

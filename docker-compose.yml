@@ -78,8 +78,8 @@ services:
 
   eureka-service:
     build:
-      context: .
-      dockerfile: eureka-service/Dockerfile
+      context: ./eureka-service
+      dockerfile: Dockerfile
     container_name: eureka-service
     ports:
       - "${EUREKA_SERVICE_PORT}:${EUREKA_SERVICE_PORT}"
@@ -98,8 +98,8 @@ services:
 
   auth-service:
     build:
-      context: .
-      dockerfile: auth-service/Dockerfile
+      context: ./auth-service
+      dockerfile: Dockerfile
     container_name: user-service
     ports:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
@@ -118,8 +118,8 @@ services:
 
   gateway-service:
     build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
+      context: ./api-gateway
+      dockerfile: Dockerfile
     container_name: gateway-service
     ports:
       - "${GATEWAY_SERVICE_PORT}:${GATEWAY_SERVICE_PORT}"
@@ -137,8 +137,8 @@ services:
 
   billing-service:
     build:
-      context: .
-      dockerfile: billing-service/Dockerfile
+      context: ./billing-service
+      dockerfile: Dockerfile
     container_name: billing-service
     ports:
       - "${BILLING_SERVICE_PORT}:${BILLING_SERVICE_PORT}"
