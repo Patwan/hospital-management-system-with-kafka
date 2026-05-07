@@ -1,0 +1,18 @@
+FROM maven:3.9-eclipse-temurin-21
+
+WORKDIR /app
+
+# relative path from build context
+COPY eureka-service/pom.xml ./
+COPY eureka-service/src ./src
+
+# Also need parent pom if referenced
+COPY pom.xml ../pom.xml
+
+EXPOSE 8761
+
+ENV SPRING_DEVTOOLS_RESTART_ENABLED=true \
+    SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+
+# Run with Maven for hot reload
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.profiles=docker"]

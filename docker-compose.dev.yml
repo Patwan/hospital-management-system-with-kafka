@@ -1,0 +1,144 @@
+# used in dev mode with hot reload functionality
+
+services:
+  user-service-db:
+    image: postgres:15-alpine
+    container_name: user-service-db
+    networks:
+      - hospital-system-backend-network
+    environment:
+      - POSTGRES_DB=user_service
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - TZ=Africa/Nairobi
+    volumes:
+      - user_service_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user-service-db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  patient-service-db:
+    image: postgres:15-alpine
+    container_name: patient-service-db
+    networks:
+      - hospital-system-backend-network
+    environment:
+      - POSTGRES_DB=patient_service
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - TZ=Africa/Nairobi
+    volumes:
+      - patient_service_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d patient-service-db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    networks:
+      - hospital-system-backend-network
+    ports:
+      - "5050:8978"
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+    environment:
+      - CB_SERVER_NAME=${CLOUDBEAVER_SERVER_NAME}
+      - CB_ADMIN_NAME=${CLOUDBEAVER_ADMIN}
+      - CB_ADMIN_PASSWORD=${CLOUDBEAVER_PASSWORD}
+      - CB_ANONYMOUS_ACCESS=${CLOUDBEAVER_ANONYMOUS_ACCESS}
+      - CB_HOME=${CLOUDBEAVER_HOME}
+    restart: unless-stopped
+    depends_on:
+      patient-service-db:
+        condition: service_healthy
+      user-service-db:
+        condition: service_healthy
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://cloudbeaver:8978" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+
+  eureka-service:
+    build:
+      context: .
+      dockerfile: eureka-service/Dockerfile.dev
+    container_name: eureka-service
+    ports:
+      - "${EUREKA_SERVICE_PORT}:${EUREKA_SERVICE_PORT}"
+    networks:
+      - hospital-system-backend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://EUREKA-SERVICE:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    environment:
+      - TZ=Africa/Nairobi
+    env_file:
+      - .env
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile.dev
+    container_name: user-service
+    ports:
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    depends_on:
+      user-service-db:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+    networks:
+      - hospital-system-backend-network
+    restart: unless-stopped
+    environment:
+      - TZ=Africa/Nairobi
+    env_file:
+      - .env
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile.dev
+    container_name: gateway-service
+    ports:
+      - "${GATEWAY_SERVICE_PORT}:${GATEWAY_SERVICE_PORT}"
+    depends_on:
+      - eureka-service
+      - auth-service
+      - patient-service
+    networks:
+      - hospital-system-backend-network
+    restart: unless-stopped
+    environment:
+      - TZ=Africa/Nairobi
+    env_file:
+      - .env
+
+networks:
+  hospital-system-backend-network:
+    driver: bridge
+
+volumes:
+  user_service_db_data:
+  patient_service_db_data:

@@ -1,0 +1,21 @@
+FROM maven:3.9.9-eclipse-temurin-21
+
+# Install inotify-tools for file watching
+RUN apt-get update && apt-get install -y inotify-tools && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy pom.xml first (dependency caching) – same as production builder stage
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code – required for spring-boot:run
+COPY src ./src
+
+EXPOSE 4004
+
+ENV SPRING_DEVTOOLS_RESTART_ENABLED=true \
+    SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+
+# Use inotify to restart the application on source changes
+CMD ["sh", "-c", "mvn spring-boot:run -Dspring-boot.run.profiles=docker & while inotifywait -r -e modify,create,delete /app/src; do echo 'Changes detected, restarting...'; pkill -f 'spring-boot:run'; sleep 1; mvn spring-boot:run -Dspring-boot.run.profiles=docker & done"]
